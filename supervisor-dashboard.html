@@ -459,8 +459,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
       </div>
       <div class="topbar-actions">
         <div class="live-dot">Live</div>
-        <button class="btn btn-ghost" onclick="loadDemoData()">🔄 Load Demo</button>
-        <button class="btn btn-ghost" onclick="clearAll()">🗑 Clear All</button>
+        <button class="btn btn-ghost" id="demo-btn" style="display:none" onclick="loadDemoData()">🔄 Load Demo</button>
+        <button class="btn btn-ghost" id="clear-btn" style="display:none" onclick="clearAll()">🗑 Clear All</button>
       </div>
     </div>
 
@@ -596,6 +596,7 @@ async function fmCheckLogin(u,p){
 let complaints = [];
 let currentFilter = 'all';
 let currentUser = '';
+let currentRole = '';
 const supervisors = ['Supervisor 1', 'Supervisor 2', 'Supervisor 3'];
 
 const issueLabels = {
@@ -616,6 +617,10 @@ async function doLogin() {
   if (!rec) { document.getElementById('login-err').style.display = 'block'; return; }
   document.getElementById('login-err').style.display = 'none';
   currentUser = rec.name;
+  currentRole = rec.role;
+  const mgr = rec.role === 'manager';
+  document.getElementById('demo-btn').style.display = mgr ? '' : 'none';
+  document.getElementById('clear-btn').style.display = mgr ? '' : 'none';
   const u2 = rec.name; {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'flex';
@@ -667,6 +672,7 @@ function startPolling() {
 
 // ── Demo data ──────────────────────────────────────────────
 async function loadDemoData() {
+  if (currentRole !== 'manager') { showToast('Manager only'); return; }
   const demo = [
     { id:'FB-1001', timestamp: new Date(Date.now()-3600000).toISOString(), location:'5th Floor — Male Washroom', rating:'bad', issues:['cleaning','supplies'], comment:'The washroom needs immediate cleaning. Soap dispenser is empty.', contact:null, photos:0, status:'Open', assignedTo:'', notes:'' },
     { id:'FB-1002', timestamp: new Date(Date.now()-7200000).toISOString(), location:'5th Floor — Meeting Room 3', rating:'neutral', issues:['damage'], comment:'Projector screen is broken.', contact:{name:'Ahmed Ali', phone:'0501234567', email:''}, photos:1, status:'In Progress', assignedTo:'Supervisor 2', notes:'Technician called, coming tomorrow.' },
@@ -679,6 +685,7 @@ async function loadDemoData() {
 }
 
 async function clearAll() {
+  if (currentRole !== 'manager') { showToast('Manager only'); return; }
   if (!confirm('Delete ALL complaints for EVERYONE? This cannot be undone.')) return;
   try {
     const all = await fmList();
@@ -723,7 +730,12 @@ function cardHTML(c) {
   const tags = (c.issues||[]).map(i => `<span class="issue-tag">${issueLabels[i]||i}</span>`).join('');
   const pill = `<span class="status-pill ${pillClass[c.status]||'pill-open'}">${c.status}</span>`;
   const contact = c.contact ? `<div class="detail-block"><label>Contact</label><p>${c.contact.name||''} ${c.contact.phone||''}</p></div>` : `<div class="detail-block"><label>Contact</label><p style="color:var(--text-muted)">Anonymous</p></div>`;
-  const photos = c.photos ? `<div class="detail-block"><label>Photos</label><p>📷 ${c.photos} photo(s) attached</p></div>` : '';
+  const photoImgs = (c.photoData && c.photoData.length)
+    ? c.photoData.map((src, i) => `<img src="${src}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;margin:4px 6px 0 0;cursor:pointer;border:1px solid var(--border,#ccc)" onclick="showPhoto('${c.id}',${i});event.stopPropagation()">`).join('')
+    : '';
+  const photos = (c.photoData && c.photoData.length)
+    ? `<div class="detail-block"><label>Photos (click to enlarge)</label><div>${photoImgs}</div></div>`
+    : (c.photos ? `<div class="detail-block"><label>Photos</label><p>📷 ${c.photos} photo(s) attached (image not stored — submitted before photo upload was enabled)</p></div>` : '');
   const supOptions = supervisors.map(s => `<option value="${s}" ${c.assignedTo===s?'selected':''}>${s}</option>`).join('');
 
   return `
@@ -799,6 +811,22 @@ function timeSince(ts) {
   if (s < 3600) return Math.floor(s/60) + 'm ago';
   if (s < 86400) return Math.floor(s/3600) + 'h ago';
   return Math.floor(s/86400) + 'd ago';
+}
+
+function showPhoto(id, i) {
+  const c = complaints.find(x => x.id === id);
+  if (!c || !c.photoData || !c.photoData[i]) return;
+  let box = document.getElementById('photo-lightbox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'photo-lightbox';
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';
+    box.onclick = () => box.style.display = 'none';
+    box.innerHTML = '<img id="photo-lightbox-img" style="max-width:92vw;max-height:92vh;border-radius:10px">';
+    document.body.appendChild(box);
+  }
+  document.getElementById('photo-lightbox-img').src = c.photoData[i];
+  box.style.display = 'flex';
 }
 
 function showToast(msg) {
