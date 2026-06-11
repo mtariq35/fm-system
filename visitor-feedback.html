@@ -707,6 +707,73 @@
 <div class="footer" id="footer-text">Powered by Facility Management System</div>
 
 <script>
+// ── FM shared cloud database (Firestore REST) ─────────────
+const FM_DB_BASE='https://firestore.googleapis.com/v1/projects/fm-system-b92d4/databases/(default)/documents';
+function fmEnc(v){
+  if(v===null||v===undefined)return{nullValue:null};
+  if(typeof v==='number')return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+  if(typeof v==='boolean')return{booleanValue:v};
+  if(Array.isArray(v))return{arrayValue:{values:v.map(fmEnc)}};
+  if(typeof v==='object'){const f={};for(const k in v)f[k]=fmEnc(v[k]);return{mapValue:{fields:f}};}
+  return{stringValue:String(v)};
+}
+function fmDec(v){
+  if(v.nullValue!==undefined)return null;
+  if(v.stringValue!==undefined)return v.stringValue;
+  if(v.integerValue!==undefined)return parseInt(v.integerValue,10);
+  if(v.doubleValue!==undefined)return v.doubleValue;
+  if(v.booleanValue!==undefined)return v.booleanValue;
+  if(v.arrayValue!==undefined)return(v.arrayValue.values||[]).map(fmDec);
+  if(v.mapValue!==undefined){const o={},f=v.mapValue.fields||{};for(const k in f)o[k]=fmDec(f[k]);return o;}
+  return null;
+}
+function fmDocToObj(d){const o={},f=d.fields||{};for(const k in f)o[k]=fmDec(f[k]);return o;}
+async function fmAdd(obj){
+  const fields={};for(const k in obj)fields[k]=fmEnc(obj[k]);
+  const r=await fetch(FM_DB_BASE+'/fm_feedback?documentId='+encodeURIComponent(obj.id),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+  if(!r.ok)throw new Error('save failed: '+r.status);
+  return r.json();
+}
+async function fmList(){
+  let docs=[],token='';
+  do{
+    const r=await fetch(FM_DB_BASE+'/fm_feedback?pageSize=300'+(token?'&pageToken='+token:''));
+    if(!r.ok)throw new Error('load failed: '+r.status);
+    const j=await r.json();
+    docs=docs.concat(j.documents||[]);
+    token=j.nextPageToken||'';
+  }while(token);
+  const list=docs.map(fmDocToObj);
+  list.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
+  return list;
+}
+async function fmUpdate(id,patch){
+  const fields={},mask=[];
+  for(const k in patch){fields[k]=fmEnc(patch[k]);mask.push('updateMask.fieldPaths='+encodeURIComponent(k));}
+  const r=await fetch(FM_DB_BASE+'/fm_feedback/'+encodeURIComponent(id)+'?'+mask.join('&'),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+  if(!r.ok)throw new Error('update failed: '+r.status);
+  return r.json();
+}
+async function fmDelete(id){
+  await fetch(FM_DB_BASE+'/fm_feedback/'+encodeURIComponent(id),{method:'DELETE'});
+}
+const FM_USERS={
+  supervisor1:{name:'Supervisor 1',role:'supervisor',hash:'2c18b2665097e69df3e2756be0d0fde87d400d4adc716bc1b0aa711be6da7512'},
+  supervisor2:{name:'Supervisor 2',role:'supervisor',hash:'31409d2c7fd9ae1253ab8f86e9b2a41f83aae697781dbd72e502e4eb18cad9ec'},
+  supervisor3:{name:'Supervisor 3',role:'supervisor',hash:'1171961d91fe97e6804c3f5c615d2cde0cba7a50eedf6f6073c706dd487d9cf5'},
+  manager:{name:'Manager',role:'manager',hash:'21bdd1b857ab5e28158481693fc360163ce841139dcecb502f6f883e5cef48d5'}
+};
+async function fmCheckLogin(u,p){
+  u=(u||'').trim().toLowerCase();
+  const rec=FM_USERS[u];
+  if(!rec)return null;
+  const data=new TextEncoder().encode('fm|'+u+'|'+p);
+  const buf=await crypto.subtle.digest('SHA-256',data);
+  const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  return hex===rec.hash?rec:null;
+}
+
+
   // ─── Location Data ────────────────────────────────────────
   const locations = {
     '5th': [
@@ -977,6 +1044,7 @@
     }
 
     const btn = document.getElementById('submit-btn');
+    const btnHTML = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner"></div>';
 
@@ -1000,19 +1068,18 @@
       status: 'Open'
     };
 
-    // Save to localStorage (dashboard will read this)
-    const existing = JSON.parse(localStorage.getItem('fm_feedback') || '[]');
-    existing.unshift(submission);
-    localStorage.setItem('fm_feedback', JSON.stringify(existing));
-
-    // Simulate network delay
-    setTimeout(() => {
+    // Save to the shared cloud database (everyone sees it instantly)
+    fmAdd(submission).then(() => {
       document.getElementById('form-section').style.display = 'none';
       const s = document.getElementById('success-screen');
       s.classList.add('show');
       document.getElementById('ref-number').textContent = '📋 Reference: ' + submission.id;
       s.scrollIntoView({ behavior: 'smooth' });
-    }, 1200);
+    }).catch(() => {
+      btn.disabled = false;
+      btn.innerHTML = btnHTML;
+      alert('Could not send feedback — please check your internet connection and try again.');
+    });
   }
 
   // ─── Reset ────────────────────────────────────────────────
