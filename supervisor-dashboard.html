@@ -616,6 +616,7 @@ async function doLogin() {
   const rec = await fmCheckLogin(u, pw);
   if (!rec) { document.getElementById('login-err').style.display = 'block'; return; }
   document.getElementById('login-err').style.display = 'none';
+  initSound(); // unlock audio for new-complaint notification sound (requires a user gesture)
   currentUser = rec.name;
   currentRole = rec.role;
   const mgr = rec.role === 'manager';
@@ -644,6 +645,32 @@ async function loadFromStorage() {
   lastCount = complaints.length;
   renderComplaints();
   updateStats();
+  translateMissing();
+}
+
+// ── Notification sound (two-tone chime) ────────────────────
+let fmAudioCtx = null;
+function initSound() {
+  try {
+    fmAudioCtx = fmAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (fmAudioCtx.state === 'suspended') fmAudioCtx.resume();
+  } catch (e) {}
+}
+function playNotifSound() {
+  if (!fmAudioCtx) return;
+  try {
+    if (fmAudioCtx.state === 'suspended') fmAudioCtx.resume();
+    const t = fmAudioCtx.currentTime;
+    [[880, 0], [1174.7, 0.18], [880, 0.9], [1174.7, 1.08]].forEach(([f, off]) => {
+      const o = fmAudioCtx.createOscillator(), g = fmAudioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + off);
+      g.gain.exponentialRampToValueAtTime(0.4, t + off + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + off + 0.5);
+      o.connect(g); g.connect(fmAudioCtx.destination);
+      o.start(t + off); o.stop(t + off + 0.55);
+    });
+  } catch (e) {}
 }
 
 // ── Polling (live updates from the shared database) ────────
@@ -658,6 +685,7 @@ function startPolling() {
     const newOnes = fresh.length - lastCount;
     if (newOnes > 0) {
       showAlert(`${newOnes} new complaint${newOnes > 1 ? 's' : ''} received!`);
+      playNotifSound();
     }
     lastCount = fresh.length;
     // Don't repaint while a card is open for editing
@@ -666,6 +694,7 @@ function startPolling() {
       renderComplaints();
       updateStats();
       document.getElementById('open-badge').textContent = complaints.filter(c => c.status === 'Open').length || '';
+      translateMissing();
     }
   }, 10000);
 }
@@ -711,6 +740,7 @@ function renderComplaints() {
   if (search) list = list.filter(c =>
     c.location.toLowerCase().includes(search) ||
     (c.comment || '').toLowerCase().includes(search) ||
+    (c.commentEn || '').toLowerCase().includes(search) ||
     (c.issues || []).join(' ').includes(search)
   );
   list.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -748,7 +778,7 @@ function cardHTML(c) {
         <span class="complaint-time">${timeAgo}</span>
       </div>
       <div class="issue-tags">${tags || '<span class="issue-tag" style="opacity:0.5">No issue category</span>'}</div>
-      ${c.comment ? `<div class="complaint-comment">"${c.comment}"</div>` : ''}
+      ${commentBlock(c)}
     </div>
     <div class="status-col">
       ${pill}
@@ -776,6 +806,37 @@ function cardHTML(c) {
       </div>
     </div>
   </div>`;
+}
+
+// Show English translation of Arabic complaints (original kept underneath)
+function commentBlock(c) {
+  if (!c.comment) return '';
+  if (c.commentEn && c.commentEn !== c.comment) {
+    return `<div class="complaint-comment">"${c.commentEn}"
+      <span style="display:block;font-size:11px;opacity:0.65;margin-top:4px;direction:rtl;text-align:right">🌐 الأصل: "${c.comment}"</span></div>`;
+  }
+  return `<div class="complaint-comment">"${c.comment}"</div>`;
+}
+
+// Fallback: translate any Arabic complaint that arrived without a translation
+const translatedIds = new Set();
+function hasArabic(t) { return /[؀-ۿ]/.test(t || ''); }
+async function translateMissing() {
+  for (const c of complaints) {
+    if (!hasArabic(c.comment) || c.commentEn || translatedIds.has(c.id)) continue;
+    translatedIds.add(c.id);
+    try {
+      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=' + encodeURIComponent(c.comment);
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const j = await r.json();
+      const en = (j[0] || []).map(s => s[0]).join('').trim();
+      if (!en) continue;
+      c.commentEn = en;
+      fmUpdate(c.id, { commentEn: en }).catch(() => {});
+      if (!document.querySelector('.complaint-card.expanded')) renderComplaints();
+    } catch (e) {}
+  }
 }
 
 function toggleCard(id, e) {

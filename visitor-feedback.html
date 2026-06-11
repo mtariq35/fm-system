@@ -263,6 +263,16 @@
   }
   .voice-status { font-size: 12px; font-weight: 600; color: var(--primary-light); margin-top: 8px; min-height: 18px; display: flex; align-items: center; gap: 6px; }
   .voice-status.error { color: #e74c3c; }
+  .voice-instruction {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    background: #eaf2fb;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
   .voice-status.success { color: var(--success); }
   .voice-dots { display: flex; gap: 3px; }
   .voice-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-light); animation: dot-bounce 0.9s ease infinite; }
@@ -548,13 +558,16 @@
     <button class="lang-btn" onclick="setLang('ar')" id="btn-ar">ع</button>
   </div>
   <div class="header-logo">🏢</div>
-  <h1 id="h-title">How are we doing?</h1>
+  <h1 id="h-title">NACD Facilities Management Services</h1>
   <p id="h-sub">Your feedback helps us improve. Takes 30 seconds.</p>
   <div class="location-tag" id="location-tag" style="display:none">📍 <span id="location-name"></span></div>
 </div>
 
-<!-- LOCATION SELECTOR (shown before form) -->
-<div class="form-wrap" id="location-section">
+<!-- LOCATION SELECTOR (fallback — shown only if location not detected from the complaint) -->
+<div class="form-wrap" id="location-section" style="display:none">
+  <div class="card" style="margin-top:0;border-color:#f39c12;background:#fef9e7" id="loc-note">
+    <p style="font-size:13px;font-weight:600;color:#d4840a;line-height:1.5" id="loc-note-text">📍 We couldn't detect the location from your message. Please select it below.</p>
+  </div>
   <div class="card" style="margin-top:0">
     <div class="section-label" id="l-floor-label">Select Floor</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0" id="floor-btns">
@@ -585,8 +598,8 @@
   </button>
 </div>
 
-<!-- FORM -->
-<div class="form-wrap" id="form-section" style="display:none">
+<!-- FORM (Page shown directly after QR scan) -->
+<div class="form-wrap" id="form-section">
 
   <!-- Step 1: Rating -->
   <div class="card">
@@ -642,8 +655,9 @@
   <!-- Step 3: Comment + Voice -->
   <div class="card">
     <div class="section-label" id="l-comment">Additional comments (optional)</div>
+    <p class="voice-instruction" id="voice-instruction">Please describe your complaint and mention the location. For example, say: "5th floor male washroom cubicle no 4 — water is on the floor."</p>
     <div class="voice-row">
-      <textarea id="comment" rows="3" placeholder="Tell us more about your experience..."></textarea>
+      <textarea id="comment" rows="3" placeholder="Tell us more about your experience..." oninput="autoDetectLocation()"></textarea>
       <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="Speak your feedback">
         <span class="mic-icon" id="mic-icon">🎤</span>
         <span class="voice-btn-label" id="mic-label">Voice</span>
@@ -869,6 +883,8 @@ async function fmCheckLogin(u,p){
     document.getElementById('err-location').classList.remove('show');
   }
 
+  let pendingSubmit = false;
+
   function confirmLocation() {
     if (!selectedArea) {
       document.getElementById('err-location').classList.add('show');
@@ -879,13 +895,103 @@ async function fmCheckLogin(u,p){
     document.getElementById('location-section').style.display = 'none';
     document.getElementById('form-section').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pendingSubmit) { pendingSubmit = false; submitFeedback(); }
+  }
+
+  // ─── Location auto-detection from complaint text ──────────
+  // Normalise Arabic-Indic digits to Western digits
+  function normDigits(t) { return (t||'').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)); }
+
+  const FLOOR_RE = {
+    '5th': /\b(5\s*th|fifth|floor\s*(no\.?\s*)?5|level\s*5|5\s*floor)\b|الخامس|خامس/i,
+    '4th': /\b(4\s*th|fourth|floor\s*(no\.?\s*)?4|level\s*4|4\s*floor)\b|الرابع|رابع/i
+  };
+
+  // [regex, English area name (use {n} for number), floor hint or null if exists on both floors]
+  const AREA_DETECT = [
+    [/(male|men'?s?|gents?)[^.,؛]{0,15}(washroom|wash\s*room|toilet|bathroom|restroom|wc)|(washroom|wash\s*room|toilet|bathroom|restroom|wc)[^.,؛]{0,15}(male|men|gents?)|دورة\s*مياه\s*الرجال|حمام\s*الرجال|مرحاض\s*الرجال/i, 'Male Washroom', null],
+    [/(female|women'?s?|ladies)[^.,؛]{0,15}(washroom|wash\s*room|toilet|bathroom|restroom|wc)|(washroom|wash\s*room|toilet|bathroom|restroom|wc)[^.,؛]{0,15}(female|women|ladies)|دورة\s*مياه\s*النساء|حمام\s*النساء|مرحاض\s*النساء/i, 'Female Washroom', null],
+    [/meeting\s*room\s*(no\.?\s*)?([1-7])|قاعة\s*(ال)?اجتماعات\s*(رقم\s*)?([1-7])/i, 'Meeting Room {n}', '5th'],
+    [/class\s*room\s*(no\.?\s*)?([1-8])|قاعة\s*دراسية\s*(رقم\s*)?([1-8])|فصل\s*(رقم\s*)?([1-8])/i, 'Classroom {n}', '4th'],
+    [/(male|men'?s?)[^.,؛]{0,12}prayer|prayer[^.,؛]{0,12}(male|men)|مصلى\s*الرجال/i, 'Male Prayer Room', '5th'],
+    [/(female|women'?s?|ladies)[^.,؛]{0,12}prayer|prayer[^.,؛]{0,12}(female|women|ladies)|مصلى\s*النساء/i, 'Female Prayer Room', '5th'],
+    [/break\s*out|breakout|break\s*area|pantry|coffee\s*area|(منطقة\s*)?(ال)?استراحة/i, 'Breakout Area', null],
+    [/reception|front\s*desk|(ال)?استقبال/i, 'Reception', null],
+    [/\bh\.?r\.?\b|human\s*resources|الموارد\s*البشرية/i, 'HR Area', '5th'],
+    [/finance|(ال)?مالية/i, 'Finance Area', '5th'],
+    [/procurement|(ال)?مشتريات/i, 'Procurement Area', '5th'],
+    [/\bo\.?c\.?\s*(area|department)|منطقة\s*OC/i, 'OC Area', '5th'],
+    [/\bi\.?t\.?\s*(area|department|room)|information\s*technology|تقنية\s*المعلومات/i, 'IT Area', '5th'],
+    [/library|(ال)?مكتبة/i, 'Library Area', '5th'],
+    [/training\s*room|غرفة\s*التدريب|(ال)?تدريب/i, 'Training Room', '5th'],
+    [/executive|التنفيذية/i, 'Executive Area', '5th'],
+    [/design\s*team|فريق\s*التصميم|(ال)?تصميم/i, 'Design Team Area', '5th'],
+    [/strategy|(ال)?استراتيجية/i, 'Strategy Team Area', '5th'],
+    [/auditorium|قاعة\s*المؤتمرات/i, 'Auditorium', '5th'],
+    [/mother\s*('?s)?\s*room|nursing\s*room|غرفة\s*الأم/i, 'Mother Room', '4th'],
+    [/studio|(ال)?استوديو/i, 'Studio', '4th'],
+    [/focus\s*room|غرفة\s*التركيز/i, 'Focus Room', '4th'],
+    [/common\s*area|lobby|corridor|hallway|lift|elevator|stair|المناطق\s*المشتركة|الممر|المصعد|الدرج/i, 'Common Areas', 'common'],
+  ];
+
+  const FLOOR_LABEL = { '5th': '5th Floor', '4th': '4th Floor', 'common': 'Common Areas' };
+
+  function detectLocationFromText(raw) {
+    const text = normDigits(raw);
+    if (!text || text.trim().length < 3) return null;
+    let floor = null;
+    if (FLOOR_RE['5th'].test(text)) floor = '5th';
+    else if (FLOOR_RE['4th'].test(text)) floor = '4th';
+
+    for (const [re, name, hint] of AREA_DETECT) {
+      const m = text.match(re);
+      if (!m) continue;
+      let areaName = name;
+      if (name.includes('{n}')) {
+        const num = (m.slice(1).find(g => g && /^[0-9]$/.test(g))) || '';
+        if (!num) continue;
+        areaName = name.replace('{n}', num);
+      }
+      let useFloor = floor;
+      if (hint === 'common') useFloor = 'common';
+      else if (!useFloor && hint) useFloor = hint;   // area exists on one floor only
+      if (!useFloor) return null;                    // ambiguous area, no floor mentioned
+      // verify the area exists on that floor
+      const exists = (locations[useFloor] || []).some(a => a.en === areaName);
+      if (!exists) {
+        // mentioned floor doesn't have this area — fall back to the floor that does
+        const alt = ['5th','4th','common'].find(f => (locations[f]||[]).some(a => a.en === areaName));
+        if (!alt) return null;
+        useFloor = alt;
+      }
+      return FLOOR_LABEL[useFloor] + ' — ' + areaName;
+    }
+    return null;
+  }
+
+  let detectTimer = null;
+  function autoDetectLocation() {
+    clearTimeout(detectTimer);
+    detectTimer = setTimeout(() => {
+      const found = detectLocationFromText(document.getElementById('comment').value);
+      if (found) {
+        document.getElementById('location-name').textContent = found;
+        document.getElementById('location-tag').style.display = 'inline-flex';
+        const status = document.getElementById('voice-status');
+        status.className = 'voice-status success';
+        status.textContent = lang[currentLang].locDetected + found;
+      }
+    }, 500);
   }
 
 
   const lang = {
     en: {
-      hTitle: "How are we doing?",
+      hTitle: "NACD Facilities Management Services",
       hSub: "Your feedback helps us improve. Takes 30 seconds.",
+      voiceInstr: "Please describe your complaint and mention the location. For example, say: \"5th floor male washroom cubicle no 4 — water is on the floor.\"",
+      locNote: "📍 We couldn't detect the location from your message. Please select it below.",
+      locDetected: "📍 Location detected: ",
       lFloor: "Select Floor",
       lArea: "Select Area",
       fl5th: "5th Floor", fl4th: "4th Floor", flCommon: "Common",
@@ -916,8 +1022,11 @@ async function fmCheckLogin(u,p){
       footerText: "Powered by Facility Management System"
     },
     ar: {
-      hTitle: "كيف نؤدي عملنا؟",
+      hTitle: "خدمات إدارة المرافق NACD",
       hSub: "ملاحظاتك تساعدنا على التحسين. يستغرق 30 ثانية فقط.",
+      voiceInstr: "يرجى وصف شكواك وذكر الموقع. على سبيل المثال قل: «الطابق الخامس، دورة مياه الرجال، المقصورة رقم 4 — يوجد ماء على الأرض.»",
+      locNote: "📍 لم نتمكن من تحديد الموقع من رسالتك. يرجى اختياره أدناه.",
+      locDetected: "📍 تم تحديد الموقع: ",
       lFloor: "اختر الطابق",
       lArea: "اختر المنطقة",
       fl5th: "الطابق الخامس", fl4th: "الطابق الرابع", flCommon: "مشترك",
@@ -974,6 +1083,8 @@ async function fmCheckLogin(u,p){
     document.getElementById('i-safety').textContent = d.iSafety;
     document.getElementById('i-supplies').textContent = d.iSupplies;
     document.getElementById('l-comment').childNodes[0].textContent = d.lComment + ' ';
+    document.getElementById('voice-instruction').textContent = d.voiceInstr;
+    document.getElementById('loc-note-text').textContent = d.locNote;
     document.getElementById('comment').placeholder = d.commentPh;
     document.getElementById('l-photo').childNodes[0].textContent = d.lPhoto + ' ';
     document.getElementById('l-photo-p').textContent = d.lPhotoPh;
@@ -1056,12 +1167,42 @@ async function fmCheckLogin(u,p){
     document.getElementById('contact-fields').classList.toggle('visible', cb.checked);
   }
 
+  // ─── Translation (Arabic → English for supervisors) ──────
+  function hasArabic(t) { return /[؀-ۿ]/.test(t || ''); }
+  async function translateToEnglish(text) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=' + encodeURIComponent(text);
+      const r = await fetch(url, { signal: ctrl.signal });
+      if (!r.ok) throw new Error('translate failed');
+      const j = await r.json();
+      return (j[0] || []).map(s => s[0]).join('').trim();
+    } finally { clearTimeout(timer); }
+  }
+
   // ─── Submit ───────────────────────────────────────────────
-  function submitFeedback() {
+  async function submitFeedback() {
     if (!selectedRating) {
       document.getElementById('err-rating').classList.add('show');
       document.getElementById('err-rating').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
+    }
+
+    // Location: try auto-detection from the complaint text first.
+    // If still unknown, send the user to the location selection page.
+    if (!document.getElementById('location-name').textContent) {
+      const found = detectLocationFromText(document.getElementById('comment').value);
+      if (found) {
+        document.getElementById('location-name').textContent = found;
+        document.getElementById('location-tag').style.display = 'inline-flex';
+      } else {
+        pendingSubmit = true;
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('location-section').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
     }
 
     const btn = document.getElementById('submit-btn');
@@ -1072,6 +1213,12 @@ async function fmCheckLogin(u,p){
     // Collect all data
     const issues = Array.from(document.querySelectorAll('.issue-item.checked input')).map(i => i.value);
     const comment = document.getElementById('comment').value;
+
+    // Translate Arabic comments to English for the supervisor dashboard
+    let commentEn = '';
+    if (hasArabic(comment)) {
+      try { commentEn = await translateToEnglish(comment); } catch (e) { commentEn = ''; }
+    }
     const contactOn = document.getElementById('contact-toggle').checked;
     const name = contactOn ? document.getElementById('c-name').value : '';
     const phone = contactOn ? document.getElementById('c-phone').value : '';
@@ -1084,6 +1231,7 @@ async function fmCheckLogin(u,p){
       rating: selectedRating,
       issues,
       comment,
+      commentEn,
       contact: contactOn ? { name, phone, email } : null,
       photos: photos.length,
       photoData: photos.slice(0, 3),
@@ -1108,6 +1256,16 @@ async function fmCheckLogin(u,p){
   function resetForm() {
     selectedRating = null;
     photos = [];
+    // Clear location so the next complaint is detected fresh
+    selectedFloor = null;
+    selectedArea = null;
+    pendingSubmit = false;
+    document.getElementById('location-name').textContent = '';
+    document.getElementById('location-tag').style.display = 'none';
+    document.getElementById('location-section').style.display = 'none';
+    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('area-card').style.display = 'none';
+    document.getElementById('location-confirm-btn').style.display = 'none';
     document.querySelectorAll('.rating-btn').forEach(b => b.className = 'rating-btn');
     document.querySelectorAll('.issue-item').forEach(i => { i.classList.remove('checked'); i.querySelector('input').checked = false; });
     document.getElementById('comment').value = '';
@@ -1162,6 +1320,7 @@ async function fmCheckLogin(u,p){
       const existing = ta.value.trim();
       if (final) {
         ta.value = existing ? existing + ' ' + final : final;
+        autoDetectLocation();
       } else if (interim) {
         // Show interim in status
         document.getElementById('voice-status').innerHTML = '<div class="voice-dots"><span></span><span></span><span></span></div> ' + interim;
