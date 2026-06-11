@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facility Feedback | تقييم المرافق</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #1a5276;
+    --primary-light: #2e86c1;
+    --accent: #f39c12;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --neutral: #7f8c8d;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --text: #1a252f;
+    --text-muted: #5d6d7e;
+    --border: #d5e8f5;
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(26,82,118,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--text);
+  }
+
+  body.ar {
+    font-family: 'Tajawal', sans-serif;
+    direction: rtl;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    padding: 28px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -30px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .header-logo {
+    width: 56px; height: 56px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .header h1 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.3;
+    position: relative; z-index: 1;
+  }
+  .header p {
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    margin-top: 6px;
+    position: relative; z-index: 1;
+  }
+  .location-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-top: 12px;
+    position: relative; z-index: 1;
+  }
+
+  /* Lang toggle */
+  .lang-toggle {
+    position: absolute;
+    top: 16px; right: 16px;
+    z-index: 10;
+    display: flex; gap: 6px;
+  }
+  .lang-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lang-btn.active, .lang-btn:hover {
+    background: rgba(255,255,255,0.35);
+  }
+
+  /* Main form container */
+  .form-wrap {
+    max-width: 480px;
+    margin: -20px auto 0;
+    padding: 0 16px 40px;
+    position: relative; z-index: 2;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary-light);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Rating buttons */
+  .rating-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .rating-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 10px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: #f8fbfd;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: inherit;
+  }
+  .rating-btn .emoji { font-size: 32px; line-height: 1; }
+  .rating-btn:hover { border-color: var(--primary-light); transform: translateY(-2px); }
+  .rating-btn.selected-good { border-color: var(--success); background: #eafaf1; color: var(--success); }
+  .rating-btn.selected-neutral { border-color: var(--accent); background: #fef9e7; color: #d4840a; }
+  .rating-btn.selected-bad { border-color: var(--danger); background: #fdedec; color: var(--danger); }
+
+  /* Issue checkboxes */
+  .issue-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .issue-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: #f8fbfd;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .issue-item input { display: none; }
+  .issue-icon { font-size: 20px; flex-shrink: 0; }
+  .issue-item:hover { border-color: var(--primary-light); }
+  .issue-item.checked { border-color: var(--primary); background: #eaf2fb; color: var(--primary); font-weight: 600; }
+  .issue-item .check-mark {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    margin-left: auto;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  body.ar .issue-item .check-mark { margin-left: 0; margin-right: auto; }
+  .issue-item.checked .check-mark {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    font-size: 11px;
+  }
+
+  /* Textarea */
+  textarea {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    resize: none;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #f8fbfd;
+    min-height: 90px;
+  }
+  textarea:focus { border-color: var(--primary-light); background: #fff; }
+  textarea::placeholder { color: #aab7c4; }
+
+  /* Voice input */
+  .voice-row { display: flex; gap: 10px; align-items: flex-start; }
+  .voice-row textarea { flex: 1; }
+  .voice-btn {
+    width: 52px; height: 52px; flex-shrink: 0;
+    border-radius: 14px; border: 2px solid var(--border);
+    background: #f8fbfd;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.2s;
+    font-size: 22px; gap: 2px; padding: 0;
+  }
+  .voice-btn:hover { border-color: var(--primary-light); background: #eaf2fb; }
+  .voice-btn.listening {
+    border-color: #e74c3c; background: #fdedec;
+    animation: mic-pulse 1.2s ease infinite;
+  }
+  .voice-btn-label { font-size: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; line-height: 1; }
+  .voice-btn.listening .voice-btn-label { color: #e74c3c; }
+  @keyframes mic-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(231,76,60,0.3); }
+    50%      { box-shadow: 0 0 0 10px rgba(231,76,60,0); }
+  }
+  .voice-status { font-size: 12px; font-weight: 600; color: var(--primary-light); margin-top: 8px; min-height: 18px; display: flex; align-items: center; gap: 6px; }
+  .voice-status.error { color: #e74c3c; }
+  .voice-status.success { color: var(--success); }
+  .voice-dots { display: flex; gap: 3px; }
+  .voice-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--primary-light); animation: dot-bounce 0.9s ease infinite; }
+  .voice-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .voice-dots span:nth-child(3) { animation-delay: 0.30s; }
+  @keyframes dot-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+  /* Photo upload */
+  .photo-upload {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fbfd;
+  }
+  .photo-upload:hover { border-color: var(--primary-light); background: #eaf2fb; }
+  .photo-upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .photo-upload p { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .photo-upload span { font-size: 11px; color: #aab7c4; }
+  #photo-input { display: none; }
+  .photo-preview {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+  }
+  .photo-thumb {
+    width: 70px; height: 70px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: 2px solid var(--border);
+  }
+
+  /* Contact toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .toggle-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .toggle-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  .toggle {
+    position: relative;
+    width: 48px; height: 26px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: #d5dde5;
+    border-radius: 13px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .slider::before {
+    content: '';
+    position: absolute;
+    width: 20px; height: 20px;
+    left: 3px; top: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  input:checked + .slider { background: var(--primary); }
+  input:checked + .slider::before { transform: translateX(22px); }
+
+  .contact-fields {
+    display: none;
+    margin-top: 16px;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .contact-fields.visible { display: flex; }
+  input[type="text"], input[type="email"], input[type="tel"] {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+    background: #f8fbfd;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--primary-light); background: #fff; }
+  input::placeholder { color: #aab7c4; }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(26,82,118,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,82,118,0.4); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Validation error */
+  .error-msg {
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* Success screen */
+  .success-screen {
+    display: none;
+    text-align: center;
+    padding: 48px 24px;
+  }
+  .success-screen.show { display: block; }
+  .success-icon {
+    width: 90px; height: 90px;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px;
+    margin: 0 auto 24px;
+    box-shadow: 0 8px 24px rgba(39,174,96,0.3);
+    animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .success-screen h2 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .success-screen p {
+    color: var(--text-muted);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .success-ref {
+    display: inline-block;
+    margin-top: 20px;
+    background: #eaf2fb;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
+  .new-report-btn {
+    margin-top: 24px;
+    padding: 14px 32px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    color: #aab7c4;
+    font-size: 11px;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Floor buttons */
+  .floor-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 8px;
+    border-radius: 14px;
+    border: 2px solid var(--border);
+    background: #f8fbfd;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    font-family: inherit;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .floor-btn:hover { border-color: var(--primary-light); transform: translateY(-2px); }
+  .floor-btn.selected { border-color: var(--primary); background: #eaf2fb; color: var(--primary); }
+
+  /* Area list */
+  .area-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .area-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: #f8fbfd;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: inherit;
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  body.ar .area-btn { text-align: right; }
+  .area-btn:hover { border-color: var(--primary-light); background: #eaf2fb; }
+  .area-btn.selected { border-color: var(--primary); background: #eaf2fb; color: var(--primary); font-weight: 700; }
+  .area-btn .area-icon { font-size: 18px; flex-shrink: 0; }
+  .area-btn .area-check {
+    margin-left: auto;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  body.ar .area-btn .area-check { margin-left: 0; margin-right: auto; }
+  .area-btn.selected .area-check { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+
+  .card { animation: fadeUp 0.4s ease both; }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.10s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+  .card:nth-child(4) { animation-delay: 0.20s; }
+  .card:nth-child(5) { animation-delay: 0.25s; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('en')" id="btn-en">EN</button>
+    <button class="lang-btn" onclick="setLang('ar')" id="btn-ar">ع</button>
+  </div>
+  <div class="header-logo">🏢</div>
+  <h1 id="h-title">How are we doing?</h1>
+  <p id="h-sub">Your feedback helps us improve. Takes 30 seconds.</p>
+  <div class="location-tag" id="location-tag" style="display:none">📍 <span id="location-name"></span></div>
+</div>
+
+<!-- LOCATION SELECTOR (shown before form) -->
+<div class="form-wrap" id="location-section">
+  <div class="card" style="margin-top:0">
+    <div class="section-label" id="l-floor-label">Select Floor</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:0" id="floor-btns">
+      <button class="floor-btn" onclick="selectFloor('5th')" id="f-5th">
+        <span style="font-size:22px">🏢</span>
+        <span id="fl-5th">5th Floor</span>
+      </button>
+      <button class="floor-btn" onclick="selectFloor('4th')" id="f-4th">
+        <span style="font-size:22px">🏗️</span>
+        <span id="fl-4th">4th Floor</span>
+      </button>
+      <button class="floor-btn" onclick="selectFloor('common')" id="f-common">
+        <span style="font-size:22px">🚪</span>
+        <span id="fl-common">Common</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Area list (shown after floor selected) -->
+  <div class="card" id="area-card" style="display:none">
+    <div class="section-label" id="l-area-label">Select Area</div>
+    <div id="area-list" class="area-list"></div>
+    <div class="error-msg" id="err-location" style="margin-top:8px">⚠ Please select an area</div>
+  </div>
+
+  <button class="submit-btn" onclick="confirmLocation()" id="location-confirm-btn" style="display:none">
+    <span id="l-continue">Continue →</span>
+  </button>
+</div>
+
+<!-- FORM -->
+<div class="form-wrap" id="form-section" style="display:none">
+
+  <!-- Step 1: Rating -->
+  <div class="card">
+    <div class="section-label" id="l-rating">Rate your experience</div>
+    <div class="rating-row">
+      <button class="rating-btn" onclick="selectRating('good', this)" id="r-good">
+        <span class="emoji">😊</span>
+        <span id="r-good-label">Good</span>
+      </button>
+      <button class="rating-btn" onclick="selectRating('neutral', this)" id="r-neutral">
+        <span class="emoji">😐</span>
+        <span id="r-neutral-label">Neutral</span>
+      </button>
+      <button class="rating-btn" onclick="selectRating('bad', this)" id="r-bad">
+        <span class="emoji">😞</span>
+        <span id="r-bad-label">Bad</span>
+      </button>
+    </div>
+    <div class="error-msg" id="err-rating">⚠ Please select a rating</div>
+  </div>
+
+  <!-- Step 2: Issue Type -->
+  <div class="card">
+    <div class="section-label" id="l-issue">What's the issue? (optional)</div>
+    <div class="issue-grid">
+      <label class="issue-item" onclick="toggleIssue(this)">
+        <input type="checkbox" value="cleaning">
+        <span class="issue-icon">🧹</span>
+        <span id="i-cleaning">Cleaning / Hygiene</span>
+        <span class="check-mark">✓</span>
+      </label>
+      <label class="issue-item" onclick="toggleIssue(this)">
+        <input type="checkbox" value="damage">
+        <span class="issue-icon">🔧</span>
+        <span id="i-damage">Damage / Repair</span>
+        <span class="check-mark">✓</span>
+      </label>
+      <label class="issue-item" onclick="toggleIssue(this)">
+        <input type="checkbox" value="safety">
+        <span class="issue-icon">⚠️</span>
+        <span id="i-safety">Safety Concern</span>
+        <span class="check-mark">✓</span>
+      </label>
+      <label class="issue-item" onclick="toggleIssue(this)">
+        <input type="checkbox" value="supplies">
+        <span class="issue-icon">🧴</span>
+        <span id="i-supplies">Supplies Running Out</span>
+        <span class="check-mark">✓</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Step 3: Comment + Voice -->
+  <div class="card">
+    <div class="section-label" id="l-comment">Additional comments (optional)</div>
+    <div class="voice-row">
+      <textarea id="comment" rows="3" placeholder="Tell us more about your experience..."></textarea>
+      <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="Speak your feedback">
+        <span class="mic-icon" id="mic-icon">🎤</span>
+        <span class="voice-btn-label" id="mic-label">Voice</span>
+      </button>
+    </div>
+    <div class="voice-status" id="voice-status"></div>
+  </div>
+
+  <!-- Step 4: Photo -->
+  <div class="card">
+    <div class="section-label" id="l-photo">Attach a photo (optional)</div>
+    <div class="photo-upload" onclick="document.getElementById('photo-input').click()">
+      <div class="photo-upload-icon">📷</div>
+      <p id="l-photo-p">Tap to upload a photo</p>
+      <span id="l-photo-span">JPG, PNG up to 10MB</span>
+    </div>
+    <input type="file" id="photo-input" accept="image/*" multiple onchange="handlePhotos(this)">
+    <div class="photo-preview" id="photo-preview"></div>
+  </div>
+
+  <!-- Step 5: Contact -->
+  <div class="card">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label" id="l-contact">Leave your contact details</div>
+        <div class="toggle-sub" id="l-contact-sub">Optional — for follow-up only</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="contact-toggle" onchange="toggleContact(this)">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="contact-fields" id="contact-fields">
+      <input type="text" id="c-name" placeholder="Your name">
+      <input type="tel" id="c-phone" placeholder="Phone number">
+      <input type="email" id="c-email" placeholder="Email address (optional)">
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <button class="submit-btn" onclick="submitFeedback()" id="submit-btn">
+    <span id="submit-label">Submit Feedback</span>
+    <span>→</span>
+  </button>
+  <div class="error-msg" id="err-general" style="text-align:center; margin-top:10px;"></div>
+
+</div>
+
+<!-- SUCCESS SCREEN -->
+<div class="form-wrap">
+  <div class="card success-screen" id="success-screen">
+    <div class="success-icon">✓</div>
+    <h2 id="s-title">Thank You!</h2>
+    <p id="s-msg">Your feedback has been received and our team has been notified. We'll get this sorted right away.</p>
+    <div class="success-ref" id="ref-number"></div>
+    <br>
+    <button class="new-report-btn" onclick="resetForm()" id="s-new">Submit Another</button>
+  </div>
+</div>
+
+<div class="footer" id="footer-text">Powered by Facility Management System</div>
+
+<script>
+  // ─── Location Data ────────────────────────────────────────
+  const locations = {
+    '5th': [
+      { icon: '🚹', en: 'Male Washroom',         ar: 'دورة مياه الرجال' },
+      { icon: '🚺', en: 'Female Washroom',        ar: 'دورة مياه النساء' },
+      { icon: '☕', en: 'Breakout Area',           ar: 'منطقة الاستراحة' },
+      { icon: '🛎️', en: 'Reception',              ar: 'الاستقبال' },
+      { icon: '🚪', en: 'Meeting Room 1',          ar: 'قاعة اجتماعات 1' },
+      { icon: '🚪', en: 'Meeting Room 2',          ar: 'قاعة اجتماعات 2' },
+      { icon: '🚪', en: 'Meeting Room 3',          ar: 'قاعة اجتماعات 3' },
+      { icon: '🚪', en: 'Meeting Room 4',          ar: 'قاعة اجتماعات 4' },
+      { icon: '🚪', en: 'Meeting Room 5',          ar: 'قاعة اجتماعات 5' },
+      { icon: '🚪', en: 'Meeting Room 6',          ar: 'قاعة اجتماعات 6' },
+      { icon: '🚪', en: 'Meeting Room 7',          ar: 'قاعة اجتماعات 7' },
+      { icon: '🕌', en: 'Male Prayer Room',        ar: 'مصلى الرجال' },
+      { icon: '🕌', en: 'Female Prayer Room',      ar: 'مصلى النساء' },
+      { icon: '👥', en: 'HR Area',                 ar: 'منطقة الموارد البشرية' },
+      { icon: '💰', en: 'Finance Area',             ar: 'منطقة المالية' },
+      { icon: '📦', en: 'Procurement Area',         ar: 'منطقة المشتريات' },
+      { icon: '🏛️', en: 'OC Area',                 ar: 'منطقة OC' },
+      { icon: '💻', en: 'IT Area',                  ar: 'منطقة تقنية المعلومات' },
+      { icon: '📚', en: 'Library Area',             ar: 'منطقة المكتبة' },
+      { icon: '🎓', en: 'Training Room',            ar: 'غرفة التدريب' },
+      { icon: '⭐', en: 'Executive Area',           ar: 'المنطقة التنفيذية' },
+      { icon: '🎨', en: 'Design Team Area',         ar: 'منطقة فريق التصميم' },
+      { icon: '📊', en: 'Strategy Team Area',       ar: 'منطقة فريق الاستراتيجية' },
+      { icon: '🎭', en: 'Auditorium',               ar: 'قاعة المؤتمرات' },
+      { icon: '📍', en: 'Other Areas — 5th Floor',  ar: 'مناطق أخرى — الطابق الخامس' },
+    ],
+    '4th': [
+      { icon: '🚹', en: 'Male Washroom',           ar: 'دورة مياه الرجال' },
+      { icon: '🚺', en: 'Female Washroom',          ar: 'دورة مياه النساء' },
+      { icon: '☕', en: 'Breakout Area',             ar: 'منطقة الاستراحة' },
+      { icon: '🛎️', en: 'Reception',                ar: 'الاستقبال' },
+      { icon: '🏫', en: 'Classroom 1',              ar: 'قاعة دراسية 1' },
+      { icon: '🏫', en: 'Classroom 2',              ar: 'قاعة دراسية 2' },
+      { icon: '🏫', en: 'Classroom 3',              ar: 'قاعة دراسية 3' },
+      { icon: '🏫', en: 'Classroom 4',              ar: 'قاعة دراسية 4' },
+      { icon: '🏫', en: 'Classroom 5',              ar: 'قاعة دراسية 5' },
+      { icon: '🏫', en: 'Classroom 6',              ar: 'قاعة دراسية 6' },
+      { icon: '🏫', en: 'Classroom 7',              ar: 'قاعة دراسية 7' },
+      { icon: '🏫', en: 'Classroom 8',              ar: 'قاعة دراسية 8' },
+      { icon: '🤱', en: 'Mother Room',              ar: 'غرفة الأم' },
+      { icon: '🎬', en: 'Studio',                   ar: 'الاستوديو' },
+      { icon: '🎯', en: 'Focus Room',               ar: 'غرفة التركيز' },
+      { icon: '📍', en: 'Other Areas — 4th Floor',  ar: 'مناطق أخرى — الطابق الرابع' },
+    ],
+    'common': [
+      { icon: '🚪', en: 'Common Areas',             ar: 'المناطق المشتركة' },
+    ]
+  };
+
+  let selectedFloor = null;
+  let selectedArea = null;
+
+  function selectFloor(floor) {
+    selectedFloor = floor;
+    selectedArea = null;
+    document.querySelectorAll('.floor-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('f-' + floor).classList.add('selected');
+
+    // Build area list
+    const list = document.getElementById('area-list');
+    list.innerHTML = '';
+    const areas = locations[floor];
+    areas.forEach((area, i) => {
+      const label = currentLang === 'ar' ? area.ar : area.en;
+      const floorLabel = floor === '5th'
+        ? (currentLang === 'ar' ? 'الطابق الخامس' : '5th Floor')
+        : floor === '4th'
+        ? (currentLang === 'ar' ? 'الطابق الرابع' : '4th Floor')
+        : (currentLang === 'ar' ? 'المناطق المشتركة' : 'Common Areas');
+      const btn = document.createElement('button');
+      btn.className = 'area-btn';
+      btn.dataset.index = i;
+      btn.dataset.floor = floorLabel;
+      btn.innerHTML = `<span class="area-icon">${area.icon}</span><span>${label}</span><span class="area-check">✓</span>`;
+      btn.onclick = () => selectArea(btn, floorLabel + ' — ' + label);
+      list.appendChild(btn);
+    });
+
+    document.getElementById('area-card').style.display = 'block';
+    document.getElementById('location-confirm-btn').style.display = 'none';
+    document.getElementById('err-location').classList.remove('show');
+    document.getElementById('area-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function selectArea(btn, fullName) {
+    selectedArea = fullName;
+    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('location-confirm-btn').style.display = 'flex';
+    document.getElementById('err-location').classList.remove('show');
+  }
+
+  function confirmLocation() {
+    if (!selectedArea) {
+      document.getElementById('err-location').classList.add('show');
+      return;
+    }
+    document.getElementById('location-name').textContent = selectedArea;
+    document.getElementById('location-tag').style.display = 'inline-flex';
+    document.getElementById('location-section').style.display = 'none';
+    document.getElementById('form-section').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+
+  const lang = {
+    en: {
+      hTitle: "How are we doing?",
+      hSub: "Your feedback helps us improve. Takes 30 seconds.",
+      lFloor: "Select Floor",
+      lArea: "Select Area",
+      fl5th: "5th Floor", fl4th: "4th Floor", flCommon: "Common",
+      lContinue: "Continue →",
+      lRating: "Rate your experience",
+      rGood: "Good", rNeutral: "Neutral", rBad: "Bad",
+      lIssue: "What's the issue? (optional)",
+      iCleaning: "Cleaning / Hygiene",
+      iDamage: "Damage / Repair",
+      iSafety: "Safety Concern",
+      iSupplies: "Supplies Running Out",
+      lComment: "Additional comments (optional)",
+      commentPh: "Tell us more about your experience...",
+      lPhoto: "Attach a photo (optional)",
+      lPhotoPh: "Tap to upload a photo",
+      lPhotoSpan: "JPG, PNG up to 10MB",
+      lContact: "Leave your contact details",
+      lContactSub: "Optional — for follow-up only",
+      namePh: "Your name",
+      phonePh: "Phone number",
+      emailPh: "Email address (optional)",
+      micStart: "Tap to speak", micStop: "Stop recording", micListening: "Listening...", micDone: "Voice added ✓", micError: "Microphone not available", micUnsupported: "Voice not supported on this browser",
+      submitLabel: "Submit Feedback",
+      errRating: "⚠ Please select a rating",
+      sTitle: "Thank You!",
+      sMsg: "Your feedback has been received and our team has been notified. We'll get this sorted right away.",
+      sNew: "Submit Another",
+      footerText: "Powered by Facility Management System"
+    },
+    ar: {
+      hTitle: "كيف نؤدي عملنا؟",
+      hSub: "ملاحظاتك تساعدنا على التحسين. يستغرق 30 ثانية فقط.",
+      lFloor: "اختر الطابق",
+      lArea: "اختر المنطقة",
+      fl5th: "الطابق الخامس", fl4th: "الطابق الرابع", flCommon: "مشترك",
+      lContinue: "متابعة →",
+      lRating: "قيّم تجربتك",
+      rGood: "جيد", rNeutral: "محايد", rBad: "سيء",
+      lIssue: "ما هي المشكلة؟ (اختياري)",
+      iCleaning: "النظافة / الصحة",
+      iDamage: "تلف / إصلاح",
+      iSafety: "مخاوف السلامة",
+      iSupplies: "نقص في المستلزمات",
+      lComment: "تعليقات إضافية (اختياري)",
+      commentPh: "أخبرنا المزيد عن تجربتك...",
+      lPhoto: "أرفق صورة (اختياري)",
+      lPhotoPh: "اضغط لرفع صورة",
+      lPhotoSpan: "JPG أو PNG حتى 10 ميجابايت",
+      lContact: "اترك بيانات الاتصال",
+      lContactSub: "اختياري — للمتابعة فقط",
+      namePh: "اسمك",
+      phonePh: "رقم الهاتف",
+      emailPh: "البريد الإلكتروني (اختياري)",
+      micStart: "اضغط للتحدث", micStop: "إيقاف التسجيل", micListening: "جارٍ الاستماع...", micDone: "تمت إضافة الصوت ✓", micError: "الميكروفون غير متاح", micUnsupported: "الصوت غير مدعوم في هذا المتصفح",
+      submitLabel: "إرسال الملاحظة",
+      errRating: "⚠ يرجى اختيار تقييم",
+      sTitle: "شكراً لك!",
+      sMsg: "تم استلام ملاحظتك وتم إخطار فريقنا. سنتولى حل هذا الأمر فوراً.",
+      sNew: "إرسال ملاحظة أخرى",
+      footerText: "نظام إدارة المرافق"
+    }
+  };
+
+  let currentLang = 'en';
+  let selectedRating = null;
+  let photos = [];
+
+  function setLang(l) {
+    currentLang = l;
+    const d = lang[l];
+    document.getElementById('h-title').textContent = d.hTitle;
+    document.getElementById('h-sub').textContent = d.hSub;
+    document.getElementById('l-floor-label').childNodes[0].textContent = d.lFloor + ' ';
+    document.getElementById('l-area-label').childNodes[0].textContent = d.lArea + ' ';
+    document.getElementById('fl-5th').textContent = d.fl5th;
+    document.getElementById('fl-4th').textContent = d.fl4th;
+    document.getElementById('fl-common').textContent = d.flCommon;
+    document.getElementById('l-continue').textContent = d.lContinue;
+    document.getElementById('l-rating').childNodes[0].textContent = d.lRating + ' ';
+    document.getElementById('r-good-label').textContent = d.rGood;
+    document.getElementById('r-neutral-label').textContent = d.rNeutral;
+    document.getElementById('r-bad-label').textContent = d.rBad;
+    document.getElementById('l-issue').childNodes[0].textContent = d.lIssue + ' ';
+    document.getElementById('i-cleaning').textContent = d.iCleaning;
+    document.getElementById('i-damage').textContent = d.iDamage;
+    document.getElementById('i-safety').textContent = d.iSafety;
+    document.getElementById('i-supplies').textContent = d.iSupplies;
+    document.getElementById('l-comment').childNodes[0].textContent = d.lComment + ' ';
+    document.getElementById('comment').placeholder = d.commentPh;
+    document.getElementById('l-photo').childNodes[0].textContent = d.lPhoto + ' ';
+    document.getElementById('l-photo-p').textContent = d.lPhotoPh;
+    document.getElementById('l-photo-span').textContent = d.lPhotoSpan;
+    document.getElementById('l-contact').textContent = d.lContact;
+    document.getElementById('l-contact-sub').textContent = d.lContactSub;
+    document.getElementById('c-name').placeholder = d.namePh;
+    document.getElementById('c-phone').placeholder = d.phonePh;
+    document.getElementById('c-email').placeholder = d.emailPh;
+    document.getElementById('submit-label').textContent = d.submitLabel;
+    document.getElementById('err-rating').textContent = d.errRating;
+    document.getElementById('s-title').textContent = d.sTitle;
+    document.getElementById('s-msg').textContent = d.sMsg;
+    document.getElementById('s-new').textContent = d.sNew;
+    document.getElementById('footer-text').textContent = d.footerText;
+
+    document.getElementById('btn-en').classList.toggle('active', l === 'en');
+    document.getElementById('btn-ar').classList.toggle('active', l === 'ar');
+    document.body.classList.toggle('ar', l === 'ar');
+    document.documentElement.setAttribute('dir', l === 'ar' ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('lang', l);
+    // Refresh area list if floor already chosen
+    if (selectedFloor) selectFloor(selectedFloor);
+  }
+
+  // ─── Rating ───────────────────────────────────────────────
+  function selectRating(val, el) {
+    selectedRating = val;
+    document.querySelectorAll('.rating-btn').forEach(b => b.className = 'rating-btn');
+    el.classList.add('selected-' + val);
+    document.getElementById('err-rating').classList.remove('show');
+  }
+
+  // ─── Issues ───────────────────────────────────────────────
+  function toggleIssue(el) {
+    el.classList.toggle('checked');
+    const cb = el.querySelector('input');
+    cb.checked = !cb.checked;
+  }
+
+  // ─── Photos ───────────────────────────────────────────────
+  function handlePhotos(input) {
+    const preview = document.getElementById('photo-preview');
+    Array.from(input.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        photos.push(e.target.result);
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'photo-thumb';
+        preview.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ─── Contact toggle ───────────────────────────────────────
+  function toggleContact(cb) {
+    document.getElementById('contact-fields').classList.toggle('visible', cb.checked);
+  }
+
+  // ─── Submit ───────────────────────────────────────────────
+  function submitFeedback() {
+    if (!selectedRating) {
+      document.getElementById('err-rating').classList.add('show');
+      document.getElementById('err-rating').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div>';
+
+    // Collect all data
+    const issues = Array.from(document.querySelectorAll('.issue-item.checked input')).map(i => i.value);
+    const comment = document.getElementById('comment').value;
+    const contactOn = document.getElementById('contact-toggle').checked;
+    const name = contactOn ? document.getElementById('c-name').value : '';
+    const phone = contactOn ? document.getElementById('c-phone').value : '';
+    const email = contactOn ? document.getElementById('c-email').value : '';
+
+    const submission = {
+      id: 'FB-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      location: document.getElementById('location-name').textContent,
+      rating: selectedRating,
+      issues,
+      comment,
+      contact: contactOn ? { name, phone, email } : null,
+      photos: photos.length,
+      status: 'Open'
+    };
+
+    // Save to localStorage (dashboard will read this)
+    const existing = JSON.parse(localStorage.getItem('fm_feedback') || '[]');
+    existing.unshift(submission);
+    localStorage.setItem('fm_feedback', JSON.stringify(existing));
+
+    // Simulate network delay
+    setTimeout(() => {
+      document.getElementById('form-section').style.display = 'none';
+      const s = document.getElementById('success-screen');
+      s.classList.add('show');
+      document.getElementById('ref-number').textContent = '📋 Reference: ' + submission.id;
+      s.scrollIntoView({ behavior: 'smooth' });
+    }, 1200);
+  }
+
+  // ─── Reset ────────────────────────────────────────────────
+  function resetForm() {
+    selectedRating = null;
+    photos = [];
+    document.querySelectorAll('.rating-btn').forEach(b => b.className = 'rating-btn');
+    document.querySelectorAll('.issue-item').forEach(i => { i.classList.remove('checked'); i.querySelector('input').checked = false; });
+    document.getElementById('comment').value = '';
+    stopVoice();
+    document.getElementById('voice-status').textContent = '';
+    document.getElementById('voice-status').className = 'voice-status';
+    document.getElementById('photo-preview').innerHTML = '';
+    document.getElementById('photo-input').value = '';
+    document.getElementById('contact-toggle').checked = false;
+    document.getElementById('contact-fields').classList.remove('visible');
+    document.getElementById('c-name').value = '';
+    document.getElementById('c-phone').value = '';
+    document.getElementById('c-email').value = '';
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = false;
+    btn.innerHTML = '<span id="submit-label">' + lang[currentLang].submitLabel + '</span><span>→</span>';
+    document.getElementById('success-screen').classList.remove('show');
+    document.getElementById('form-section').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── Voice Input ──────────────────────────────────────────
+  let recognition = null;
+  let isListening = false;
+
+  function initRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return null;
+    const r = new SpeechRecognition();
+    r.continuous = false;
+    r.interimResults = true;
+    r.maxAlternatives = 1;
+
+    r.onstart = () => {
+      isListening = true;
+      const btn = document.getElementById('voice-btn');
+      btn.classList.add('listening');
+      document.getElementById('mic-icon').textContent = '🔴';
+      document.getElementById('mic-label').textContent = lang[currentLang].micStop;
+      const status = document.getElementById('voice-status');
+      status.className = 'voice-status';
+      status.innerHTML = '<div class="voice-dots"><span></span><span></span><span></span></div> ' + lang[currentLang].micListening;
+    };
+
+    r.onresult = (e) => {
+      let interim = '', final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      const ta = document.getElementById('comment');
+      const existing = ta.value.trim();
+      if (final) {
+        ta.value = existing ? existing + ' ' + final : final;
+      } else if (interim) {
+        // Show interim in status
+        document.getElementById('voice-status').innerHTML = '<div class="voice-dots"><span></span><span></span><span></span></div> ' + interim;
+      }
+    };
+
+    r.onend = () => {
+      isListening = false;
+      const btn = document.getElementById('voice-btn');
+      btn.classList.remove('listening');
+      document.getElementById('mic-icon').textContent = '🎤';
+      document.getElementById('mic-label').textContent = lang[currentLang].micStart;
+      const status = document.getElementById('voice-status');
+      const ta = document.getElementById('comment');
+      if (ta.value.trim()) {
+        status.className = 'voice-status success';
+        status.textContent = lang[currentLang].micDone;
+        setTimeout(() => { status.textContent = ''; status.className = 'voice-status'; }, 3000);
+      } else {
+        status.textContent = '';
+      }
+    };
+
+    r.onerror = (e) => {
+      isListening = false;
+      const btn = document.getElementById('voice-btn');
+      btn.classList.remove('listening');
+      document.getElementById('mic-icon').textContent = '🎤';
+      document.getElementById('mic-label').textContent = lang[currentLang].micStart;
+      const status = document.getElementById('voice-status');
+      status.className = 'voice-status error';
+      if (e.error === 'not-allowed') status.textContent = '🔒 ' + lang[currentLang].micError;
+      else if (e.error === 'no-speech') status.textContent = '';
+      else status.textContent = lang[currentLang].micError;
+      setTimeout(() => { status.textContent = ''; status.className = 'voice-status'; }, 3000);
+    };
+
+    return r;
+  }
+
+  function toggleVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      const status = document.getElementById('voice-status');
+      status.className = 'voice-status error';
+      status.textContent = lang[currentLang].micUnsupported;
+      return;
+    }
+    if (isListening) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
+  }
+
+  function startVoice() {
+    recognition = initRecognition();
+    if (!recognition) return;
+    recognition.lang = currentLang === 'ar' ? 'ar-SA' : 'en-US';
+    try { recognition.start(); } catch(e) {}
+  }
+
+  function stopVoice() {
+    if (recognition && isListening) {
+      try { recognition.stop(); } catch(e) {}
+    }
+    isListening = false;
+    const btn = document.getElementById('voice-btn');
+    if (btn) btn.classList.remove('listening');
+    document.getElementById('mic-icon').textContent = '🎤';
+    document.getElementById('mic-label').textContent = lang[currentLang]?.micStart || 'Voice';
+  }
+
+</script>
+</body>
+</html>

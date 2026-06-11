@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator — FM System</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --bg:#f5f7fa;--white:#fff;--ink:#0d1b2a;--ink2:#3d4f61;--ink3:#7a8fa3;
+  --border:#e2e8f0;--blue:#1d6fec;--blue-dim:#e8f0fd;
+  --green:#0ea678;--green-dim:#e6f7f2;
+  --purple:#7c3aed;--radius:12px;
+  --shadow:0 2px 12px rgba(13,27,42,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+.shell{display:flex;min-height:100vh;}
+
+/* Sidebar */
+.sidebar{width:220px;flex-shrink:0;background:var(--ink);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.logo-mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px;}
+.logo-name{font-size:13px;font-weight:700;color:#fff;}
+.logo-role{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.nav{padding:16px 12px;flex:1;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);cursor:pointer;transition:all 0.15s;margin-bottom:2px;}
+.nav-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);}
+.nav-item.active{background:rgba(29,111,236,0.2);color:var(--blue);}
+.nav-icon{font-size:15px;width:18px;text-align:center;}
+.sidebar-foot{padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08);}
+.m-av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;}
+
+/* Main */
+.main{margin-left:220px;flex:1;padding:28px 32px;}
+.topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px;}
+.page-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--blue);margin-bottom:4px;}
+.page-title{font-size:24px;font-weight:800;}
+.page-sub{font-size:13px;color:var(--ink3);margin-top:4px;}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--ink2);transition:all 0.15s;}
+.btn:hover{border-color:var(--blue);color:var(--blue);}
+.btn-blue{background:var(--blue);color:#fff;border-color:var(--blue);}
+.btn-blue:hover{opacity:0.88;color:#fff;}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green);}
+.btn-green:hover{opacity:0.88;color:#fff;}
+
+/* Controls */
+.controls-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px;box-shadow:var(--shadow);}
+.controls-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:180px;}
+.ctrl-group label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink3);}
+.ctrl-select, .ctrl-input{background:var(--bg);border:1.5px solid var(--border);color:var(--ink);font-size:13px;font-family:'Sora',sans-serif;padding:10px 14px;border-radius:10px;outline:none;transition:border-color 0.15s;width:100%;}
+.ctrl-select:focus,.ctrl-input:focus{border-color:var(--blue);}
+
+/* Floor tabs */
+.floor-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.floor-tab{padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--ink3);transition:all 0.15s;font-family:'Sora',sans-serif;}
+.floor-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.floor-tab:hover:not(.active){border-color:var(--blue);color:var(--blue);}
+
+/* Select all row */
+.select-all-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.select-all-row label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;cursor:pointer;}
+.select-all-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;}
+.count-badge{font-size:11px;font-weight:700;background:var(--blue-dim);color:var(--blue);padding:3px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;}
+
+/* Location grid */
+.location-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:24px;}
+.loc-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;transition:all 0.15s;font-size:13px;font-weight:500;}
+.loc-item:hover{border-color:var(--blue);}
+.loc-item.selected{border-color:var(--blue);background:var(--blue-dim);}
+.loc-item input[type=checkbox]{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;flex-shrink:0;}
+.loc-icon{font-size:16px;flex-shrink:0;}
+.loc-name{flex:1;color:var(--ink2);}
+.loc-item.selected .loc-name{color:var(--blue);font-weight:600;}
+
+/* Generate bar */
+.generate-bar{background:linear-gradient(135deg,var(--ink),#1a2840);border-radius:var(--radius);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;}
+.gen-info h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;}
+.gen-info p{font-size:12px;color:rgba(255,255,255,0.5);}
+.gen-btns{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* QR Posters grid */
+.posters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
+
+/* Individual poster card */
+.poster-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);animation:up 0.3s ease both;}
+.poster-preview{padding:24px;background:linear-gradient(160deg,#f0f6ff 0%,#ffffff 100%);display:flex;flex-direction:column;align-items:center;border-bottom:1px solid var(--border);}
+.poster-org{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--blue);margin-bottom:8px;}
+.poster-title{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:4px;text-align:center;}
+.poster-sub{font-size:11px;color:var(--ink3);margin-bottom:16px;text-align:center;}
+.qr-box{width:140px;height:140px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;border:2px solid var(--border);overflow:hidden;}
+.qr-box canvas, .qr-box img{width:120px!important;height:120px!important;}
+.poster-location{margin-top:12px;font-size:12px;font-weight:700;color:var(--ink2);text-align:center;}
+.poster-floor{font-size:10px;color:var(--ink3);margin-top:2px;}
+.scan-hint{margin-top:10px;font-size:10px;color:var(--ink3);display:flex;align-items:center;gap:4px;}
+
+.poster-actions{padding:12px 16px;display:flex;gap:8px;}
+.poster-btn{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--ink2);font-family:'Sora',sans-serif;transition:all 0.15s;text-align:center;}
+.poster-btn:hover{border-color:var(--blue);color:var(--blue);}
+.poster-btn.print-btn{background:var(--blue);color:#fff;border-color:var(--blue);}
+.poster-btn.print-btn:hover{opacity:0.88;}
+
+/* Empty */
+.empty{text-align:center;padding:60px 20px;color:var(--ink3);}
+.empty-icon{font-size:48px;margin-bottom:12px;}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;display:flex;align-items:center;gap:8px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@keyframes up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:800px){.sidebar{display:none;}.main{margin-left:0;padding:16px;}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">🏢</div>
+    <div class="logo-name">FM System</div>
+    <div class="logo-role">Manager View</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item" onclick="window.location='https://mtariq35.github.io/fm-system/supervisor-dashboard.html'"><span class="nav-icon">📋</span> Complaints</div>
+    <div class="nav-item" onclick="window.location='https://mtariq35.github.io/fm-system/manager-analytics.html'"><span class="nav-icon">📊</span> Analytics</div>
+    <div class="nav-item active"><span class="nav-icon">📱</span> QR Codes</div>
+    <div class="nav-item" style="opacity:.35;cursor:default"><span class="nav-icon">🔧</span> Work Orders</div>
+    <div class="nav-item" style="opacity:.35;cursor:default"><span class="nav-icon">⚠️</span> H&S</div>
+    <div class="nav-item" style="opacity:.35;cursor:default"><span class="nav-icon">👷</span> Contractors</div>
+  </nav>
+  <div class="sidebar-foot" style="display:flex;align-items:center;gap:8px;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.08)">
+    <div class="m-av">MT</div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.75)">Muhammad Tariq</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.3)">Facility Manager</div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="page-eyebrow">Facility Management</div>
+      <div class="page-title">QR Code Generator</div>
+      <div class="page-sub">Generate, preview and print QR code posters for each location</div>
+    </div>
+    <button class="btn btn-blue" onclick="printAll()">🖨 Print All Selected</button>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-card">
+    <div class="controls-row">
+      <div class="ctrl-group">
+        <label>Feedback URL</label>
+        <input class="ctrl-input" id="base-url" value="https://mtariq35.github.io/fm-system/visitor-feedback.html" placeholder="https://yoursite.com/feedback">
+      </div>
+      <div class="ctrl-group" style="max-width:200px">
+        <label>Organisation Name</label>
+        <input class="ctrl-input" id="org-name" value="Facility Management" placeholder="Your org name">
+      </div>
+      <div class="ctrl-group" style="max-width:160px">
+        <label>QR Colour</label>
+        <select class="ctrl-select" id="qr-color">
+          <option value="#0d1b2a">Dark Navy (default)</option>
+          <option value="#1d6fec">Blue</option>
+          <option value="#0ea678">Green</option>
+          <option value="#7c3aed">Purple</option>
+          <option value="#000000">Black</option>
+        </select>
+      </div>
+      <button class="btn btn-blue" onclick="generateSelected()" style="flex-shrink:0;height:42px">⚡ Generate QR Codes</button>
+    </div>
+  </div>
+
+  <!-- Floor selector -->
+  <div class="floor-tabs">
+    <button class="floor-tab active" onclick="setFloor('5th',this)">🏢 5th Floor</button>
+    <button class="floor-tab" onclick="setFloor('4th',this)">🏗️ 4th Floor</button>
+    <button class="floor-tab" onclick="setFloor('common',this)">🚪 Common Areas</button>
+    <button class="floor-tab" onclick="setFloor('all',this)">✦ All Locations</button>
+  </div>
+
+  <!-- Select all row -->
+  <div class="select-all-row">
+    <label>
+      <input type="checkbox" id="select-all" onchange="toggleAll(this)">
+      Select all visible locations
+    </label>
+    <span class="count-badge" id="sel-count">0 selected</span>
+  </div>
+
+  <!-- Location checkboxes -->
+  <div class="location-grid" id="location-grid"></div>
+
+  <!-- Generate bar -->
+  <div class="generate-bar">
+    <div class="gen-info">
+      <h3>📱 Ready to generate</h3>
+      <p id="gen-status">Select locations above, then click Generate QR Codes</p>
+    </div>
+    <div class="gen-btns">
+      <button class="btn btn-green" onclick="generateSelected()">⚡ Generate QR Codes</button>
+      <button class="btn" style="color:#fff;border-color:rgba(255,255,255,0.2);background:rgba(255,255,255,0.08)" onclick="printAll()">🖨 Print All</button>
+    </div>
+  </div>
+
+  <!-- Posters output -->
+  <div id="posters-section" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:16px;font-weight:700">Generated Posters</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px" id="poster-count-label"></div>
+      </div>
+      <button class="btn btn-blue" onclick="printAll()">🖨 Print All Posters</button>
+    </div>
+    <div class="posters-grid" id="posters-grid"></div>
+  </div>
+
+</main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✓ <span id="toast-msg"></span></div>
+
+<script>
+// ── Location data ──────────────────────────────────────────
+const locations = {
+  '5th': [
+    {icon:'🚹', name:'Male Washroom'},
+    {icon:'🚺', name:'Female Washroom'},
+    {icon:'☕', name:'Breakout Area'},
+    {icon:'🛎️', name:'Reception'},
+    {icon:'🚪', name:'Meeting Room 1'},
+    {icon:'🚪', name:'Meeting Room 2'},
+    {icon:'🚪', name:'Meeting Room 3'},
+    {icon:'🚪', name:'Meeting Room 4'},
+    {icon:'🚪', name:'Meeting Room 5'},
+    {icon:'🚪', name:'Meeting Room 6'},
+    {icon:'🚪', name:'Meeting Room 7'},
+    {icon:'🕌', name:'Male Prayer Room'},
+    {icon:'🕌', name:'Female Prayer Room'},
+    {icon:'👥', name:'HR Area'},
+    {icon:'💰', name:'Finance Area'},
+    {icon:'📦', name:'Procurement Area'},
+    {icon:'🏛️', name:'OC Area'},
+    {icon:'💻', name:'IT Area'},
+    {icon:'📚', name:'Library Area'},
+    {icon:'🎓', name:'Training Room'},
+    {icon:'⭐', name:'Executive Area'},
+    {icon:'🎨', name:'Design Team Area'},
+    {icon:'📊', name:'Strategy Team Area'},
+    {icon:'🎭', name:'Auditorium'},
+    {icon:'📍', name:'Other Areas'},
+  ],
+  '4th': [
+    {icon:'🚹', name:'Male Washroom'},
+    {icon:'🚺', name:'Female Washroom'},
+    {icon:'☕', name:'Breakout Area'},
+    {icon:'🛎️', name:'Reception'},
+    {icon:'🏫', name:'Classroom 1'},
+    {icon:'🏫', name:'Classroom 2'},
+    {icon:'🏫', name:'Classroom 3'},
+    {icon:'🏫', name:'Classroom 4'},
+    {icon:'🏫', name:'Classroom 5'},
+    {icon:'🏫', name:'Classroom 6'},
+    {icon:'🏫', name:'Classroom 7'},
+    {icon:'🏫', name:'Classroom 8'},
+    {icon:'🤱', name:'Mother Room'},
+    {icon:'🎬', name:'Studio'},
+    {icon:'🎯', name:'Focus Room'},
+    {icon:'📍', name:'Other Areas'},
+  ],
+  'common': [
+    {icon:'🚪', name:'Common Areas'},
+  ]
+};
+
+let currentFloor = '5th';
+let selected = new Set();
+let generatedPosters = [];
+
+// ── Init ───────────────────────────────────────────────────
+window.onload = () => { renderGrid(); updateCount(); };
+
+function setFloor(f, el) {
+  currentFloor = f;
+  document.querySelectorAll('.floor-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+  updateCount();
+  document.getElementById('select-all').checked = false;
+}
+
+function getVisibleLocations() {
+  if (currentFloor === 'all') {
+    return [
+      ...locations['5th'].map(l => ({...l, floor:'5th Floor', key:'5th|'+l.name})),
+      ...locations['4th'].map(l => ({...l, floor:'4th Floor', key:'4th|'+l.name})),
+      ...locations['common'].map(l => ({...l, floor:'Common', key:'common|'+l.name})),
+    ];
+  }
+  const floorLabel = currentFloor === '5th' ? '5th Floor' : currentFloor === '4th' ? '4th Floor' : 'Common Areas';
+  return locations[currentFloor].map(l => ({...l, floor: floorLabel, key: currentFloor+'|'+l.name}));
+}
+
+function renderGrid() {
+  const locs = getVisibleLocations();
+  document.getElementById('location-grid').innerHTML = locs.map(l => `
+    <div class="loc-item ${selected.has(l.key)?'selected':''}" onclick="toggleLoc('${l.key}', this)" id="loc-${CSS.escape(l.key)}">
+      <input type="checkbox" ${selected.has(l.key)?'checked':''} onclick="event.stopPropagation()">
+      <span class="loc-icon">${l.icon}</span>
+      <span class="loc-name">${l.floor !== 'Common Areas' && currentFloor !== 'all' ? l.name : l.floor+' — '+l.name}</span>
+    </div>
+  `).join('');
+}
+
+function toggleLoc(key, el) {
+  if (selected.has(key)) { selected.delete(key); el.classList.remove('selected'); el.querySelector('input').checked = false; }
+  else { selected.add(key); el.classList.add('selected'); el.querySelector('input').checked = true; }
+  updateCount();
+}
+
+function toggleAll(cb) {
+  const locs = getVisibleLocations();
+  if (cb.checked) locs.forEach(l => selected.add(l.key));
+  else locs.forEach(l => selected.delete(l.key));
+  renderGrid();
+  updateCount();
+}
+
+function updateCount() {
+  const n = selected.size;
+  document.getElementById('sel-count').textContent = n + ' selected';
+  document.getElementById('gen-status').textContent = n === 0
+    ? 'Select locations above, then click Generate QR Codes'
+    : `${n} location${n!==1?'s':''} selected — click Generate to create posters`;
+}
+
+// ── Generate ───────────────────────────────────────────────
+function generateSelected() {
+  if (selected.size === 0) { showToast('Please select at least one location'); return; }
+
+  const baseUrl = document.getElementById('base-url').value || 'visitor-feedback.html';
+  const orgName = document.getElementById('org-name').value || 'Facility Management';
+  const qrColor = document.getElementById('qr-color').value;
+
+  // Build poster data
+  generatedPosters = [];
+  for (const key of selected) {
+    const [floor, name] = key.split('|');
+    const floorLabel = floor === '5th' ? '5th Floor' : floor === '4th' ? '4th Floor' : 'Common';
+    const locData = (locations[floor]||[]).find(l => l.name === name);
+    const icon = locData?.icon || '📍';
+    const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'loc=' + encodeURIComponent(floorLabel + ' — ' + name);
+    generatedPosters.push({ key, floor: floorLabel, name, icon, url, orgName, qrColor });
+  }
+
+  renderPosters();
+  document.getElementById('posters-section').style.display = 'block';
+  document.getElementById('posters-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(generatedPosters.length + ' QR poster' + (generatedPosters.length!==1?'s':'')+' generated');
+}
+
+function renderPosters() {
+  document.getElementById('poster-count-label').textContent = generatedPosters.length + ' poster' + (generatedPosters.length!==1?'s':'')+' ready to print';
+  const grid = document.getElementById('posters-grid');
+  grid.innerHTML = generatedPosters.map((p,i) => `
+    <div class="poster-card" style="animation-delay:${i*0.04}s">
+      <div class="poster-preview" id="preview-${i}">
+        <div class="poster-org">${p.orgName}</div>
+        <div class="poster-title">How are we doing?</div>
+        <div class="poster-sub">كيف نؤدي عملنا؟</div>
+        <div class="qr-box" id="qr-${i}"></div>
+        <div class="poster-location">${p.icon} ${p.name}</div>
+        <div class="poster-floor">${p.floor}</div>
+        <div class="scan-hint">📱 Scan to share your feedback</div>
+      </div>
+      <div class="poster-actions">
+        <button class="poster-btn" onclick="previewPoster(${i})">👁 Preview</button>
+        <button class="poster-btn print-btn" onclick="printPoster(${i})">🖨 Print</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Generate QR codes
+  setTimeout(() => {
+    generatedPosters.forEach((p, i) => {
+      const el = document.getElementById('qr-'+i);
+      if (!el) return;
+      el.innerHTML = '';
+      new QRCode(el, {
+        text: p.url,
+        width: 120, height: 120,
+        colorDark: p.qrColor,
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    });
+  }, 100);
+}
+
+// ── Print single poster ────────────────────────────────────
+function printPoster(i) {
+  const p = generatedPosters[i];
+  const qrEl = document.getElementById('qr-'+i);
+  const canvas = qrEl?.querySelector('canvas');
+  const qrDataUrl = canvas ? canvas.toDataURL() : '';
+
+  const w = window.open('', '_blank');
+  w.document.write(posterPrintHTML([{...p, qrDataUrl}]));
+  w.document.close();
+  setTimeout(() => w.print(), 600);
+}
+
+// ── Print all posters ──────────────────────────────────────
+function printAll() {
+  if (!generatedPosters.length) { showToast('Generate posters first'); return; }
+  const posters = generatedPosters.map((p, i) => {
+    const qrEl = document.getElementById('qr-'+i);
+    const canvas = qrEl?.querySelector('canvas');
+    return {...p, qrDataUrl: canvas ? canvas.toDataURL() : ''};
+  });
+  const w = window.open('', '_blank');
+  w.document.write(posterPrintHTML(posters));
+  w.document.close();
+  setTimeout(() => w.print(), 800);
+}
+
+function posterPrintHTML(posters) {
+  const cards = posters.map(p => `
+    <div class="poster">
+      <div class="p-header">
+        <div class="p-org">${p.orgName}</div>
+        <div class="p-title">How are we doing?</div>
+        <div class="p-sub">كيف نؤدي عملنا؟</div>
+      </div>
+      <div class="p-qr">
+        ${p.qrDataUrl ? `<img src="${p.qrDataUrl}" width="180" height="180">` : '<div style="width:180px;height:180px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">QR Code</div>'}
+      </div>
+      <div class="p-location">${p.icon} ${p.name}</div>
+      <div class="p-floor">${p.floor}</div>
+      <div class="p-hint">📱 Scan to share your feedback · امسح لمشاركة ملاحظاتك</div>
+      <div class="p-url">${p.url}</div>
+    </div>
+  `).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FM QR Posters</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Sora',sans-serif;background:#fff;}
+    .poster{
+      width:148mm;height:210mm;
+      border:2px solid #0d1b2a;border-radius:8px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:24px 20px;page-break-after:always;margin:auto;
+      background:linear-gradient(160deg,#f0f6ff 0%,#fff 50%);
+    }
+    .p-header{text-align:center;margin-bottom:20px;}
+    .p-org{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:#1d6fec;margin-bottom:8px;}
+    .p-title{font-size:22px;font-weight:800;color:#0d1b2a;line-height:1.2;}
+    .p-sub{font-size:14px;color:#7a8fa3;margin-top:4px;direction:rtl;}
+    .p-qr{border:3px solid #e2e8f0;border-radius:12px;padding:12px;background:#fff;margin-bottom:20px;}
+    .p-qr img{display:block;}
+    .p-location{font-size:18px;font-weight:800;color:#0d1b2a;text-align:center;margin-bottom:4px;}
+    .p-floor{font-size:12px;color:#7a8fa3;font-weight:600;margin-bottom:16px;}
+    .p-hint{font-size:10px;color:#3d4f61;text-align:center;line-height:1.6;margin-bottom:8px;font-weight:600;}
+    .p-url{font-size:8px;color:#aab7c4;word-break:break-all;text-align:center;font-family:monospace;margin-top:4px;}
+    .divider{width:40px;height:3px;background:#1d6fec;border-radius:2px;margin:16px auto;}
+    @media print{body{margin:0;}@page{margin:8mm;size:A5;}}
+  </style></head><body>${cards}</body></html>`;
+}
+
+// ── Preview modal ──────────────────────────────────────────
+function previewPoster(i) {
+  printPoster(i); // opens in new window for preview
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
